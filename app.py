@@ -40,7 +40,7 @@ def get_data():
 
 @app.route('/error')
 def trigger_error():
-    logger.error("An intentional error was triggered!")
+    logger.info("An intentional error was triggered!")
     return "Oops, something went wrong!", 500
 
 if __name__ == '__main__':
