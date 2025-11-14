@@ -1,44 +1,51 @@
-# This is our CI (Continuous Integration) pipeline
 name: CI Pipeline
 
-# 1. This controls WHEN the workflow will run
 on:
-  # Triggers the workflow on push events for the "main" branch
   push:
     branches: [ "main" ]
-  # Also allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# 2. This defines WHAT the workflow does
 jobs:
-  # We're defining a single job called "build"
   build:
-    # The type of machine to run the job on (GitHub-hosted Ubuntu)
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checks out your repository code
       - name: Check out code
         uses: actions/checkout@v3
 
-      # Step 2: Sets up a Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10' # We can specify the version
+          python-version: '3.10'
 
-      # Step 3: Installs our dependencies (Flask)
-      # We'll also add a requirements.txt file for this next
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install Flask
+          pip install -r requirements.txt
           
-      # Step 4: A simple test to see if the app runs
-      # It runs the app in the background, waits 5 secs, and checks if it's still running
-      - name: Test if app runs
+      # --- NEW STEPS START HERE ---
+
+      - name: Run web app in background
         run: |
+          # Run the app.py script in the background
           python3 app.py &
+          # Wait 5 seconds to make sure it's fully started
           sleep 5
-          # Check if the process is still running
-          pgrep -f "python3 app.py" || (echo "App failed to start" && exit 1)
+          
+      - name: Generate log data
+        run: |
+          echo "Generating 50 'normal' log entries..."
+          for i in {1..25}; do curl http://localhost:5000/; done
+          for i in {1..25}; do curl http://localhost:5000/data; done
+          
+          echo "Generating 5 'error' log entries..."
+          for i in {1..5}; do curl http://localhost:5000/error; done
+          
+          echo "Log generation complete. Waiting for logs to write..."
+          sleep 5 # Give the app a moment to write all logs to the file
+
+      - name: Run AI log analysis
+        run: |
+          echo "Running AI model..."
+          # This will run our model.py script
+          python3 model.py
